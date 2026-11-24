@@ -123,7 +123,13 @@ function App() {
     <main className="page">
       <header className="topbar">
         <a className="brand" href="/" aria-label="DocShift home">
-          <span className="brand-mark">D</span>
+          <img
+            className="brand-mark"
+            src="/docshift-logo.svg"
+            alt=""
+            width="36"
+            height="36"
+          />
           <span>docshift</span>
         </a>
         <span className="topbar-note">Simple document conversion</span>
