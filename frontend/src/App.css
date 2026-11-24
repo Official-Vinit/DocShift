@@ -311,7 +311,12 @@ h1 {
   color: #18794e;
 }
 
-.download-result a {
+.download-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #18794e;
+  cursor: pointer;
+  font: inherit;
   font-weight: 700;
 }

@@ -8,6 +8,7 @@ import multer from "multer";
 import helmet from "helmet";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(helmet());
 
 const allowedOrigins = (process.env.FRONTEND_ORIGINS || "http://localhost:5173")
@@ -50,19 +51,18 @@ app.use((error, req, res, next) => {
         return res.status(400).json({ message: error.message });
     }
 
-    const detail =
-        error.response?.data?.message ||
-        error.message ||
-        "Unknown conversion error";
+    const statusCode = error.statusCode || error.status || 500;
+    const detail = error.message || "Unknown conversion error";
 
-    console.error("Conversion error:", error.response?.data ?? error.stack ?? error);
+    console.error("Request error:", error.stack ?? error);
 
-    return res.status(500).json({
-        message:
-            process.env.NODE_ENV === "production"
-                ? "Conversion failed. Please try again."
-                : detail,
-    });
+    const message =
+        error.publicMessage ||
+        (statusCode < 500 || process.env.NODE_ENV !== "production"
+            ? detail
+            : "Conversion failed. Please try again.");
+
+    return res.status(statusCode).json({ message });
 });
 
 async function startServer() {

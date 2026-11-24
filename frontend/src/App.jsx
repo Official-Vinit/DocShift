@@ -18,6 +18,18 @@ const modes = {
 };
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
+function downloadBlob(blob, filename) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 function App() {
   const [mode, setMode] = useState("pdfToWord");
   const [file, setFile] = useState(null);
@@ -35,6 +47,7 @@ function App() {
     setFile(null);
     setDownload(null);
     setConversionMessage("");
+    setConversionStatus("idle");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -57,13 +70,16 @@ function App() {
         body: formData,
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
         throw new Error(data.message || "Conversion failed.");
       }
 
-      setDownload(data);
+      const blob = await response.blob();
+      const outputExtension = mode === "pdfToWord" ? "docx" : "pdf";
+      const outputName = `${file.name.replace(/\.[^.]+$/, "")}.${outputExtension}`;
+
+      setDownload({ filename: outputName, blob });
       setConversionStatus("success");
     } catch (error) {
       setConversionStatus("error");
@@ -95,6 +111,9 @@ function App() {
 
   function clearFile() {
     setFile(null);
+    setDownload(null);
+    setConversionStatus("idle");
+    setConversionMessage("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -230,14 +249,17 @@ function App() {
           {download && (
             <div className="download-result" role="status">
               <p>Your file is ready: {download.filename}</p>
-              <a href={download.downloadUrl} target="_blank" rel="noreferrer">
+              <button
+                className="download-button"
+                onClick={() => downloadBlob(download.blob, download.filename)}
+              >
                 Download converted file
-              </a>
+              </button>
             </div>
           )}
           <p className="privacy-note">
-            Files are processed by CloudConvert. Conversion tasks and download links
-            expire after 24 hours.
+            Files are converted on this server and temporary files are deleted
+            after download.
           </p>
         </div>
       </section>
