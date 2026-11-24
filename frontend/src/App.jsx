@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import "./App.css";
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+import { checkApiHealth, convertDocument } from "./services/conversionApi.js";
 const modes = {
   pdfToWord: {
     label: "PDF to Word",
@@ -60,22 +60,8 @@ function App() {
     setConversionMessage("");
     setDownload(null);
 
-    const formData = new FormData();
-    formData.append("mode", mode);
-    formData.append("file", file);
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/conversions`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "Conversion failed.");
-      }
-
-      const blob = await response.blob();
+      const blob = await convertDocument(file, mode);
       const outputExtension = mode === "pdfToWord" ? "docx" : "pdf";
       const outputName = `${file.name.replace(/\.[^.]+$/, "")}.${outputExtension}`;
 
@@ -124,15 +110,9 @@ function App() {
     setMessage("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/health`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "The API request failed.");
-      }
-
+      const healthMessage = await checkApiHealth();
       setStatus("success");
-      setMessage(data.message);
+      setMessage(healthMessage);
     } catch (error) {
       setStatus("error");
       setMessage(error.message || "Could not reach the API.");
